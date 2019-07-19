@@ -1,5 +1,7 @@
 package com.example.demo.exchange;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +17,8 @@ public class CurrenyExchangeController {
 	@Autowired
 	private ExchangeRepository exchangeRepository;
 	
+	private Logger logger = LoggerFactory.getLogger(this.getClass());
+	
 	/**
 	 * @param from
 	 * @param to
@@ -22,6 +26,8 @@ public class CurrenyExchangeController {
 	 */
 	@GetMapping("/curreny-exchange/from/{from}/to/{to}")
 	public ExchangeValue getExchangeValue(@PathVariable String from, @PathVariable String to) {
+		
+		logger.info("Inside CurrenyExchangeController >> getExchangeValue");
 		
 		//We can write custom method to retrieve the record based on From and To like the below. Refer ExchangeRepository 
 		ExchangeValue exchangeValue = exchangeRepository.findByFromAndTo(from, to);
