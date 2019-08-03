@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
+
 @RestController
 public class CurrenyExchangeController {
 
@@ -24,10 +27,29 @@ public class CurrenyExchangeController {
 	 * @param to
 	 * @return
 	 */
+	/*
+	 * @HystrixCommand(fallbackMethod = "getExchangeValue_Fallback",
+	 * commandProperties = {
+	 * 
+	 * @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds",
+	 * value = "100") })
+	 */
+	  @HystrixCommand(fallbackMethod = "getExchangeValue_Fallback")
+	 
 	@GetMapping("/curreny-exchange/from/{from}/to/{to}")
 	public ExchangeValue getExchangeValue(@PathVariable String from, @PathVariable String to) {
 		
 		logger.info("Inside CurrenyExchangeController >> getExchangeValue");
+		
+		
+		  String name = null; System.out.println(name.toString());
+		 
+		
+		/*
+		 * try { Thread.sleep(20000); } catch (Exception e) {
+		 * System.out.println("#### Exception occured ###"); }
+		 */
+		
 		
 		//We can write custom method to retrieve the record based on From and To like the below. Refer ExchangeRepository 
 		ExchangeValue exchangeValue = exchangeRepository.findByFromAndTo(from, to);
@@ -50,4 +72,14 @@ public class CurrenyExchangeController {
 		}*/
 		return exchangeValue;
 	}
+	
+	private ExchangeValue getExchangeValue_Fallback(@PathVariable String from, @PathVariable String to) {
+		ExchangeValue exchangeValue = new ExchangeValue();
+		exchangeValue.setFrom(from);
+		exchangeValue.setTo(to);
+		exchangeValue.setPort(1000);
+		exchangeValue.setConversionMultiply(2);
+        return exchangeValue;
+    }
+	
 }
