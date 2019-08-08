@@ -18,6 +18,14 @@
 		<java.version>1.8</java.version>
 		<spring-cloud.version>Greenwich.SR1</spring-cloud.version>
 		<spring-boot-admin.version>2.1.5</spring-boot-admin.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<jacoco.version>0.7.5.201505241946</jacoco.version>
+		<jacoco.ant.version>0.7.8</jacoco.ant.version>
+		<app.host>localhost</app.host>
+		<app.port>36320</app.port>
+		<skip.dump>false</skip.dump>
+		<skip.int.tests.report>false</skip.int.tests.report>
 	</properties>
 
 	<dependencies>
@@ -91,6 +99,13 @@
 	      <groupId>org.springframework.cloud</groupId>
 	      <artifactId>spring-cloud-starter-netflix-hystrix-dashboard</artifactId>
 	    </dependency>
+	  <!-- Dependencies Added for Code Coverage -->  
+	    <dependency>
+			<groupId>org.jacoco</groupId>
+			<artifactId>org.jacoco.agent</artifactId>
+			<version>0.7.5.201505241946</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<dependencyManagement>
@@ -120,6 +135,135 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+			
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+						<configuration>
+							<port>36320</port>
+							<destFile>jacoco-it.exec</destFile>
+							<output>tcpserver</output>
+						</configuration>
+					</execution>
+					<execution>
+						<id>pull-test-data</id>
+						<phase>test</phase>
+						<goals>
+							<goal>dump</goal>
+						</goals>
+						<configuration>
+							<destFile>${project.build.directory}/jacoco-it-${app.host}.exec</destFile>
+							<address>${app.host}</address>
+							<port>${app.port}</port>
+							<reset>true</reset>
+							<skip>${skip.dump}</skip>
+						</configuration>
+					</execution>
+					<execution>
+						<id>merge-test-data</id>
+						<goals>
+							<goal>merge</goal>
+						</goals>
+						<configuration>
+							<destFile>target/jacoco-it.exec</destFile>
+							<skip>${skip.dump}</skip>
+							<fileSets>
+								<fileSet
+									implementation="org.apache.maven.shared.model.fileset.FileSet">
+									<directory>target</directory>
+									<includes>
+										<include>*it*.exec</include>
+									</includes>
+								</fileSet>
+							</fileSets>
+						</configuration>
+					</execution>
+					<execution>
+						<id>jacoco-integration-initialize</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>prepare-agent-integration</goal>
+						</goals>
+						<configuration>
+							<propertyName>failsafe.argLine</propertyName>
+							<destFile>target/jacoco-it-base.exec</destFile>
+						</configuration>
+					</execution>
+				</executions>
+				<configuration>
+					<propertyName>jacoco.agent.argLine</propertyName>
+					<skip>false</skip>
+					<append>true</append>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.8</version>
+				<executions>
+					<execution>
+						<id>generate-report</id>
+<!-- 						 <phase>post-integration-test</phase>  -->
+						 <phase>test</phase> 
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<skip>${skip.int.tests.report}</skip>
+							<target>
+								<!-- Execute an ant task within maven -->
+								<echo message="Generating JaCoCo Coverage Reports" />
+								<taskdef name="report"
+									classname="org.jacoco.ant.ReportTask">
+									<classpath
+										path="${basedir}/target/jacoco-jars/org.jacoco.ant.jar" />
+								</taskdef>
+								<mkdir dir="${basedir}/target/coverage-report" />
+								<report>
+									<executiondata>
+										<fileset dir="${basedir}">
+											<include name="target/jacoco-it*.exec" />
+										</fileset>
+									</executiondata>
+									<structure name="Functional Test Coverage Project">
+										<group name="Coverage Report">
+											<classfiles>
+												<fileset dir="target/classes" >
+												<!-- <exclude name="com/ps/e2e/jacoco/testcoverageexample/TestCoverageExampleApplication.class"/> -->
+												</fileset>
+											</classfiles>
+											<sourcefiles encoding="UTF-8">
+												<fileset dir="src/main/java" />
+											</sourcefiles>
+										</group>
+									</structure>
+									<html destdir="${basedir}/target/coverage-report/html" />
+									<xml
+										destfile="${basedir}/target/coverage-report/coverage-report.xml" />
+									<csv
+										destfile="${basedir}/target/coverage-report/coverage-report.csv" />
+								</report>
+							</target>
+						</configuration>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>org.jacoco</groupId>
+						<artifactId>org.jacoco.ant</artifactId>
+						<version>${jacoco.ant.version}</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+			
 		</plugins>
 	</build>
 
