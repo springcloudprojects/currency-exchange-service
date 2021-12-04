@@ -23,4 +23,6 @@ public class CurrencyExchangeServiceApplication {
 	public Sampler defaultSampler() {
 		return Sampler.ALWAYS_SAMPLE;
 	}
+	
+	//Check-in test
 }
